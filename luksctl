@@ -1,0 +1,126 @@
+#!/usr/bin/env python2
+# -*- coding: utf-8 -*-
+#
+# © Copyright 2013 Julius Adorf
+#
+# This file is part of luksctl.
+#
+# luksctl is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# luksctl is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with luksctl.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+import argparse
+import ConfigParser
+import operator
+import os
+import subprocess
+import sys
+import time
+
+def is_mounted(mountpoint, verbose=False):
+    cmd = ["mountpoint"]
+    if not verbose:
+        cmd.append("--quiet")
+    cmd.append(mountpoint)
+    return 0 == subprocess.call(cmd)
+
+def mount(mountpoint, verbose=False):
+    cmd = ["sudo", "mount"]
+    if verbose:
+        cmd.append("-v")
+    cmd.append(mountpoint)
+    if subprocess.call(cmd):
+        raise Exception("Cannot mount '%s'." % mountpoint)
+
+def unmount(mountpoint, verbose=False):
+    cmd = ["sudo", "umount"]
+    if verbose:
+        cmd.append("-v")
+    cmd.append(mountpoint)
+    if subprocess.call(cmd):
+        raise Exception("Cannot unmount '%s'." % mountpoint)
+
+def luksOpen(device, name, keyfile=None, verbose=False):
+    cmd = ["sudo", "cryptsetup", "luksOpen"]
+    if verbose:
+        cmd.append("-v")
+    if keyfile != None:
+        cmd.append("--key-file")
+        cmd.append(keyfile)
+    cmd.append(device)
+    cmd.append(name)
+    if subprocess.call(cmd):
+        raise Exception("Cannot open LUKS device '%s'." % device)
+
+def luksClose(name, verbose=False):
+    cmd = ["sudo", "cryptsetup", "luksClose"]
+    if verbose:
+        cmd.append("-v")
+    cmd.append(name)
+    if subprocess.call(cmd):
+        raise Exception("Cannot close LUKS device mapped to '%s'." % name)
+
+def vgDeactivate(vg):
+    if subprocess.call(("sudo", "vgchange", "-a", "n", vg)):
+        raise Exception("Cannot deactivate volume group '%s'." % vg)
+
+class Profile:
+
+    def __init__(self, name):
+        self.name = name
+        c = ConfigParser.SafeConfigParser()
+        c.optionxform = str
+        c.read(os.path.join("/etc", "luksctl", name))
+        self.device = c.get("luks", "device")
+        self.keyfile = c.get("luks", "keyfile")
+        self.vg = c.get("lvm", "vg")
+        self.mount_points = map(operator.itemgetter(0), c.items("mount"))
+
+    def openDevice(self, verbose=False):
+        luksOpen(self.device, self.name, self.keyfile, verbose)
+        time.sleep(1)
+        for mountpoint in self.mount_points:
+            mount(mountpoint, verbose)
+ 
+    def closeDevice(self, verbose=False):
+        for mountpoint in self.mount_points:
+            if is_mounted(mountpoint):
+                unmount(mountpoint, verbose)
+        time.sleep(1)
+        vgDeactivate(self.vg)
+        luksClose(self.name, verbose)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Control devices with LVM on top of LUKS.")
+    parser.add_argument("action", help="The action to perform.")
+    parser.add_argument("name", help="Name for the device mapping.")
+    parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", help="Print verbose output.")
+    args = parser.parse_args()
+
+    name = args.name
+    action = args.action
+    verbose = args.verbose
+
+    profile = Profile(name)
+
+    try:
+        if action == "open":
+            profile.openDevice(verbose)
+        elif action == "close":
+            profile.closeDevice(verbose)
+        else:
+            raise Exception("Invalid action: '%s'\n" % action)
+    except Exception as e:
+        sys.stderr.write("Error: %s" % e.message)
+        sys.stderr.write("\n")
+        sys.exit(-1)

@@ -1,0 +1,14 @@
+# Example configuration file for LVM on top of a LUKS-encrypted device.  It
+# assumes that the LVM on the encrypted device has a volume group called
+# "vg-backup". It also assumes that /etc/fstab configures a mountpoint
+# /mnt/backup for one of the logical volumes in the volume group. You can copy
+# this file to /etc/luksctl and modify it to your needs.
+
+[luks]
+device = /dev/disk/by-uuid/6fcd8669-f46d-4333-98f3-bca16ddd92e5
+
+[lvm]
+vg = vg-backup
+
+[mount]
+/mnt/backup =
