@@ -1,5 +1,5 @@
 pkgname=luksctl
-pkgver=0.0.2
+pkgver=0.0.2-dev
 distname=$(pkgname)-$(pkgver)
 
 sources=luksctl COPYING examples/backup
