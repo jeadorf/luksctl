@@ -1,0 +1,50 @@
+.TH LUKSCTL 8 "JUNE 2013"
+
+.SH NAME
+luksctl \- Control devices with LVM on top of LUKS.
+
+.SH SYNOPSIS
+.sp
+\fBluksctl\fR {\fBCOMMAND\fR} PROFILE
+.sp
+\fBluksctl\fR \-\-help
+
+.SH OPTIONS
+
+.sp
+The following commands are understood:
+
+.PP
+\fBopen\fR
+.RS 4
+Opens a device with LVM on top of LUKS.
+.RE
+
+.PP
+\fBclose\fR
+.RS 4
+Closes a device with LVM on top of LUKS.
+.RE
+
+
+.SH FILES
+
+.I /etc/luksctl/
+.RS 4
+The profile directory. All files in this directory are assumed to be valid
+.B luksctl
+profiles.
+.RE
+
+.I /etc/luksctl/examples/
+.RS 4
+Directory containing example profiles. You can copy an example profile to the
+profile directory and adapt it appropriately in order to create a new profile.
+.RE
+
+.SH AUTHOR
+
+Julius Adorf <jeadorf@gmail.com>
+
+.SH SEE ALSO
+\fBluksctl.profile\fR(5) \fBcryptsetup\fR(8) \fBfstab\fR(5)

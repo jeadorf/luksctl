@@ -1,0 +1,85 @@
+.TH LUKSCTL\&.PROFILE 5 "JUNE 2013"
+
+.SH NAME
+luksctl.profile \- Profile options
+
+.SH SYNOPSIS
+.sp
+luksctl\&.profile
+
+.SH DESCRIPTION
+
+.sp
+Profiles for luksctl live under \fI/etc/luksctl/\fR and are Python-style
+configuration files. The name of the profile is the name of the file, i.e. the
+profile <name> is stored in the file \fI/etc/luksctl/<name>\fR. It is advisable
+to not include any fancy characters in the file name.  Profiles are divided
+into three sections.  There is an example profile file in
+\fI/etc/luksctl/examples/\fR\&.
+
+.SH LUKS OPTIONS
+
+Th LUKS options control the locking and the unlocking of the LUKS-encrypted
+device.
+
+[luks]
+
+.sp
+.PP
+\fBdevice\fR = \fI/path/to/device\fR
+.RS 4
+.RE
+
+.PP
+\fBkeyfile\fR = \fI/path/to/keyfile\fR
+.RS 4
+(optional) Unlock the LUKS-encrypted device using the keyfile
+\fI/path/to/keyfile\fR. See \fBcryptsetup\fR(8) for a description on how to add
+a keyfile as a key to a LUKS-encrypted device.
+.RE
+
+.SH LVM OPTIONS
+
+The LVM options control the activation and the deactivation of the logical
+volumes on the LUKS-encrypted device.
+
+[lvm]
+
+.sp
+.PP
+\fBvg\fR = <volume-group>
+.RS 4
+(required) This is the name of the LVM volume group whose logical volumes are
+to be activated after the LUKS-encrypted device has been unlocked. Likewise,
+the logical volumes are deactivated before the LUKS-encrypted device is locked.
+
+.RE
+
+.SH MOUNT OPTIONS
+
+The mount options specify the mountpoints for mounting after logical volume
+activation and for unmounting prior to logical volume deactivation.
+
+[mount]
+
+.sp
+.PP
+\fI/path/to/mountpoint\fR =
+.RS 4
+(optional) Specifies that a filesystem shall be mounted at
+\fI/path/to/mountpoint\fR after the logical volumes of the LVM are activated.
+The mountpoint needs to be configured in \fBfstab\fR(5). Several mountpoints
+can be listed. The "=" after the mountpoint is necessary to conform to the
+syntax of Python configuration files. The filesystems will be unmounted before
+deactivating the logical volumes irrespectively of whether the filesystem
+resides in one of the logical volumes.
+.RE
+
+.SH AUTHOR
+
+Julius Adorf <jeadorf@gmail.com>
+
+.SH SEE ALSO
+
+.sp
+\fBluksctl\fR(8) \fBcryptsetup\fR(8) \fBfstab\fR(5)
